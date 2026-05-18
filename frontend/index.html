@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>浮生渡 - AI叙事</title>
+    <style>
+        :root {
+            --bg-page: #faf9f6;
+            --bg-bubble-system: #ede8dc;
+            --bg-bubble-player: #4a6741;
+            --bg-input: #ffffff;
+            --text-primary: #2c2c2c;
+            --text-secondary: #6b6b6b;
+            --text-on-player: #ffffff;
+            --accent-gold: #c9a96e;
+            --accent-green: #5b8c6b;
+            --accent-red: #c0392b;
+            --accent-blue: #5b7f9e;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.18);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 22px;
+            --radius-xl: 28px;
+            --font-narrative: Georgia, 'Songti SC', 'STSong', 'Noto Serif SC', serif;
+            --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background: #e8e4db;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            background-image:
+                radial-gradient(ellipse at 50% 30%, rgba(180,160,130,0.25) 0%, transparent 70%),
+                radial-gradient(ellipse at 80% 80%, rgba(160,140,110,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 60%, rgba(170,150,120,0.1) 0%, transparent 50%);
+        }
+
+        .app-shell {
+            width: 100%; height: 100%;
+            max-width: 500px; max-height: 900px;
+            background: var(--bg-page);
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+        @media (min-width: 520px) {
+            .app-shell { border-radius: 20px; height: 92vh; max-height: 880px; margin: 0 12px; }
+        }
+        @media (min-width: 768px) {
+            .app-shell { border-radius: 24px; height: 88vh; max-height: 860px; }
+        }
+
+        /* Header */
+        .header {
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px 12px;
+            background: var(--bg-page);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            z-index: 10; gap: 10px;
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .header-icon {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, #d4c5a9, #c9b896);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .header-title-group { display: flex; flex-direction: column; min-width: 0; }
+        .header-title {
+            font-size: 0.95rem; font-weight: 700; color: var(--text-primary);
+            letter-spacing: 0.3px; white-space: nowrap;
+            font-family: var(--font-narrative);
+        }
+        .header-subtitle {
+            font-size: 0.7rem; color: var(--text-secondary);
+            font-weight: 500; white-space: nowrap; letter-spacing: 0.5px;
+        }
+        .header-age-badge {
+            flex-shrink: 0;
+            background: #f0ede6; border-radius: 20px;
+            padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
+            color: var(--text-primary); letter-spacing: 0.4px; white-space: nowrap;
+            transition: all var(--transition-fast);
+        }
+        .header-age-badge.pulse { animation: agePulse 0.6s ease-out; }
+        @keyframes agePulse {
+            0%, 100% { transform: scale(1); }
+            30% { transform: scale(1.08); background: #e0d9c8; }
+        }
+        .btn-attr {
+            flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+            border: 1.5px solid #d5cfc2; background: transparent; cursor: pointer;
+            font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+            transition: all var(--transition-fast); color: var(--text-secondary);
+        }
+        .btn-attr:active { background: #f0ede6; transform: scale(0.94); }
+        .btn-attr.has-change { border-color: var(--accent-gold); animation: attrBtnGlow 1.5s ease-out; }
+        @keyframes attrBtnGlow {
+            0% { box-shadow: 0 0 0 0 rgba(201,169,110,0.5); }
+            50% { box-shadow: 0 0 0 10px rgba(201,169,110,0); }
+            100% { box-shadow: 0 0 0 0 rgba(201,169,110,0); }
+        }
+
+        /* Chat area */
+        .chat-area {
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+            padding: 16px 14px 20px;
+            display: flex; flex-direction: column; gap: 10px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            mask-image: linear-gradient(to bottom, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%);
+            scrollbar-width: thin; scrollbar-color: #d5cfc2 transparent;
+        }
+        .chat-area::-webkit-scrollbar { width: 4px; }
+        .chat-area::-webkit-scrollbar-track { background: transparent; }
+        .chat-area::-webkit-scrollbar-thumb { background: #d5cfc2; border-radius: 10px; }
+
+        /* Welcome card */
+        .welcome-card {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 40px 24px; text-align: center;
+            gap: 16px; animation: fadeInUp 0.7s ease-out;
+        }
+        .welcome-icon { font-size: 56px; animation: float 3s ease-in-out infinite; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .welcome-title {
+            font-family: var(--font-narrative); font-size: 1.6rem;
+            font-weight: 700; color: var(--text-primary); letter-spacing: 1px;
+        }
+        .welcome-desc {
+            font-size: 0.85rem; color: var(--text-secondary);
+            line-height: 1.6; max-width: 280px;
+        }
+        .btn-start {
+            margin-top: 12px; padding: 14px 40px; border-radius: 30px;
+            border: none; background: linear-gradient(135deg, #5b8c6b, #4a7c59);
+            color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer;
+            letter-spacing: 1px; box-shadow: 0 4px 16px rgba(74,124,89,0.3);
+            transition: all var(--transition-smooth); font-family: var(--font-ui);
+        }
+        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(74,124,89,0.4); }
+        .btn-start:active { transform: scale(0.95); }
+
+        /* Name input */
+        .name-input-area {
+            display: none; flex-direction: column; align-items: center;
+            gap: 12px; width: 100%; max-width: 300px; margin-top: 8px;
+        }
+        .name-input-area.visible { display: flex; }
+        .name-field {
+            width: 100%; padding: 12px 18px; border-radius: 24px;
+            border: 1.5px solid #e0dbd0; background: #fff;
+            font-size: 0.95rem; font-family: var(--font-ui);
+            color: var(--text-primary); outline: none; text-align: center;
+            transition: all var(--transition-fast); letter-spacing: 0.5px;
+        }
+        .name-field:focus { border-color: #c9b896; box-shadow: 0 0 0 3px rgba(201,169,110,0.1); }
+
+        /* Gender selection */
+        .gender-select {
+            display: flex; gap: 10px; width: 100%;
+        }
+        .gender-btn {
+            flex: 1; padding: 10px 0; border-radius: 20px; border: 2px solid #e0dbd0;
+            background: #fff; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            transition: all var(--transition-fast); font-family: var(--font-ui);
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .gender-btn:active { transform: scale(0.96); }
+        .gender-btn.male.active { border-color: #5b7f9e; background: #edf4fa; color: #3a6a8e; }
+        .gender-btn.female.active { border-color: #c07a8e; background: #fdf0f3; color: #a05068; }
+
+        /* Attribute allocation panel */
+        .attr-alloc-panel {
+            display: none; flex-direction: column; align-items: center;
+            gap: 10px; width: 100%; max-width: 340px; margin-top: 4px;
+        }
+        .attr-alloc-panel.visible { display: flex; }
+        .attr-alloc-header {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; margin-bottom: 2px;
+        }
+        .attr-alloc-title {
+            font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+            letter-spacing: 0.3px;
+        }
+        .attr-alloc-points {
+            font-size: 0.82rem; font-weight: 700; color: #b8933f;
+            background: #fff8e7; border: 1px solid #e5d4a0;
+            padding: 3px 10px; border-radius: 12px;
+            transition: all var(--transition-fast);
+        }
+        .attr-alloc-points.zero { color: #5b8c6b; background: #e6f0e8; border-color: #b8d4be; }
+        .attr-alloc-points.over { color: #c0392b; background: #fce8e6; border-color: #e8b4b0; }
+        .alloc-row {
+            display: flex; align-items: center; gap: 8px; width: 100%;
+        }
+        .alloc-label {
+            width: 52px; font-size: 0.78rem; font-weight: 600;
+            color: var(--text-secondary); text-align: right; flex-shrink: 0;
+            letter-spacing: 0.3px;
+        }
+        .alloc-slider {
+            flex: 1; -webkit-appearance: none; appearance: none;
+            height: 6px; border-radius: 3px; background: #e5dcc8;
+            outline: none; transition: all var(--transition-fast);
+        }
+        .alloc-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: linear-gradient(135deg, #c9b896, #b8a070);
+            cursor: pointer; border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: all var(--transition-fast);
+        }
+        .alloc-slider::-webkit-slider-thumb:active { transform: scale(1.15); }
+        .alloc-slider::-moz-range-thumb {
+            width: 18px; height: 18px; border-radius: 50%;
+            background: linear-gradient(135deg, #c9b896, #b8a070);
+            cursor: pointer; border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .alloc-val {
+            width: 28px; text-align: center; font-weight: 700;
+            font-size: 0.9rem; color: var(--text-primary); flex-shrink: 0;
+        }
+        .alloc-btns {
+            display: flex; gap: 0;
+        }
+        .alloc-btn {
+            width: 28px; height: 28px; border-radius: 50%;
+            border: 1.5px solid #d5cfc2; background: #fff; cursor: pointer;
+            font-size: 1rem; font-weight: 700; color: var(--text-primary);
+            display: flex; align-items: center; justify-content: center;
+            transition: all var(--transition-fast);
+        }
+        .alloc-btn:active { background: #f0ede6; transform: scale(0.9); }
+        .alloc-btn.minus { color: #c0392b; border-color: #e8c4c0; }
+        .alloc-btn.plus { color: #5b8c6b; border-color: #b8d4be; }
+        .btn-rand-attr {
+            padding: 6px 14px; border-radius: 16px; border: 1px solid #e5dcc8;
+            background: #fffef9; cursor: pointer; font-size: 0.75rem;
+            font-weight: 500; color: #8a7a5c; letter-spacing: 0.3px;
+            transition: all var(--transition-fast); font-family: var(--font-ui);
+        }
+        .btn-rand-attr:active { background: #f5f1e8; transform: scale(0.95); }
+        .btn-confirm-name {
+            width: 100%; padding: 12px; border-radius: 24px; border: none;
+            background: linear-gradient(135deg, #5b8c6b, #4a7c59);
+            color: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            letter-spacing: 0.5px; transition: all var(--transition-fast);
+            font-family: var(--font-ui);
+        }
+        .btn-confirm-name:active { transform: scale(0.96); }
+        .btn-confirm-name:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Bubbles */
+        .bubble-row {
+            display: flex; flex-direction: column;
+            animation: fadeInUp 0.45s ease-out; gap: 4px;
+        }
+        .bubble-row.player { align-items: flex-end; }
+        .bubble-row.system { align-items: flex-start; }
+        .bubble {
+            max-width: 82%; padding: 12px 16px; border-radius: var(--radius-lg);
+            line-height: 1.65; font-size: 0.9rem; word-break: break-word; position: relative;
+        }
+        .bubble.system {
+            background: var(--bg-bubble-system); color: var(--text-primary);
+            border-bottom-left-radius: 6px; font-family: var(--font-narrative);
+            letter-spacing: 0.2px; box-shadow: var(--shadow-sm);
+        }
+        .bubble.player {
+            background: var(--bg-bubble-player); color: var(--text-on-player);
+            border-bottom-right-radius: 6px; font-family: var(--font-ui);
+            letter-spacing: 0.3px; box-shadow: var(--shadow-sm);
+        }
+        .bubble.scene-intro {
+            background: #f5f2ea; border-left: 3px solid var(--accent-gold);
+            font-style: italic; font-size: 0.82rem; color: #5c5548;
+            border-radius: 8px 16px 16px 8px; max-width: 88%;
+        }
+        .bubble-label {
+            font-size: 0.65rem; color: var(--text-secondary);
+            letter-spacing: 0.5px; margin-bottom: 2px; padding: 0 4px;
+            font-weight: 600; text-transform: uppercase;
+        }
+        .bubble-row.player .bubble-label { text-align: right; color: #7a9a7e; }
+        .bubble-row.system .bubble-label { text-align: left; color: #a0998a; }
+
+        /* Score card */
+        .score-card {
+            align-self: flex-start; margin-left: 12px; margin-top: 2px;
+            background: #fffef9; border: 1.5px solid #e5d9b8;
+            border-radius: var(--radius-md); padding: 10px 14px;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+            font-size: 0.78rem; color: var(--text-secondary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            animation: scorePopIn 0.55s cubic-bezier(0.175,0.885,0.32,1.275);
+            max-width: 90%;
+        }
+        @keyframes scorePopIn {
+            0% { opacity: 0; transform: scale(0.7) translateY(8px); }
+            60% { transform: scale(1.04) translateY(-2px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .score-big {
+            font-size: 1.6rem; font-weight: 700; color: #b8933f;
+            font-family: var(--font-narrative); line-height: 1;
+        }
+        .score-divider { width: 1px; height: 20px; background: #e5d9b8; border-radius: 1px; }
+        .score-breakdown { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.7rem; color: #8a7a5c; }
+        .score-breakdown span { white-space: nowrap; }
+        .score-comment { width: 100%; font-size: 0.7rem; color: #a09880; font-style: italic; margin-top: 2px; }
+
+        /* Attribute change tags */
+        .attr-change-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-left: auto; }
+        .attr-tag {
+            font-size: 0.68rem; font-weight: 600; padding: 3px 8px;
+            border-radius: 12px; white-space: nowrap; letter-spacing: 0.3px;
+            animation: tagPop 0.4s ease-out;
+        }
+        .attr-tag.positive { background: #e6f0e8; color: #3d6b47; }
+        .attr-tag.negative { background: #fce8e6; color: #a8403a; }
+        @keyframes tagPop {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.15); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Choices */
+        .choices-area {
+            align-self: flex-start; margin-left: 8px; margin-top: 6px;
+            width: calc(100% - 16px); max-width: 92%;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .choices-label {
+            font-size: 0.68rem; color: #a0998a; font-weight: 600;
+            letter-spacing: 0.5px; margin-bottom: 6px; padding-left: 4px;
+        }
+        .choice-btn {
+            width: 100%; text-align: left; padding: 12px 14px;
+            background: #fffef9; border: 1.5px solid #e5dcc8;
+            border-radius: var(--radius-md); cursor: pointer;
+            margin-bottom: 8px; transition: all var(--transition-fast);
+            font-family: var(--font-ui);
+        }
+        .choice-btn:hover { border-color: #c9b896; background: #fdf9f0; transform: translateX(3px); }
+        .choice-btn:active { transform: scale(0.97); background: #f5f1e8; }
+        .choice-inner { display: flex; align-items: flex-start; gap: 10px; }
+        .choice-letter {
+            flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+            background: linear-gradient(135deg, #c9b896, #b8a070);
+            color: #fff; font-size: 0.72rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .choice-text-wrap { flex: 1; min-width: 0; }
+        .choice-text { font-size: 0.88rem; font-weight: 500; color: var(--text-primary); line-height: 1.5; }
+        .choice-hint { font-size: 0.72rem; color: #b0a590; margin-top: 3px; }
+        .choice-or {
+            text-align: center; font-size: 0.7rem; color: #c0b8a8;
+            margin-top: 2px; letter-spacing: 0.3px;
+        }
+
+        /* Settlement overlay */
+        .settlement-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+            animation: fadeIn 0.4s ease-out; padding: 16px;
+        }
+        .settlement-card {
+            width: 100%; max-width: 380px; max-height: 88vh; overflow-y: auto;
+            background: linear-gradient(to bottom, #312e81, #3730a3, #312e81);
+            border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            animation: endingReveal 0.8s ease-out; color: #e0e7ff;
+        }
+        @keyframes endingReveal {
+            0% { opacity: 0; transform: translateY(30px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .settlement-header {
+            text-align: center; padding: 28px 20px 16px;
+        }
+        .settlement-icon { font-size: 42px; margin-bottom: 8px; }
+        .settlement-game-name { font-size: 0.85rem; font-weight: 600; color: #a5b4fc; letter-spacing: 0.5px; }
+        .settlement-ending {
+            font-family: var(--font-narrative); font-size: 1.5rem;
+            font-weight: 800; color: #fbbf24; margin: 8px 0; letter-spacing: 1px;
+        }
+        .settlement-info { font-size: 0.8rem; color: #c7d2fe; }
+        .settlement-section {
+            margin: 0 16px 12px; padding: 14px; border-radius: 16px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .settlement-section-title {
+            font-size: 0.7rem; font-weight: 600; color: #a5b4fc;
+            margin-bottom: 6px; letter-spacing: 0.5px;
+        }
+        .settlement-section p {
+            font-size: 0.85rem; line-height: 1.6; color: #e0e7ff;
+        }
+        .settlement-comment {
+            text-align: center; font-size: 1.1rem; font-weight: 700;
+            color: #f9a8d4; margin: 4px 0;
+        }
+        .settlement-attrs {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;
+            font-size: 0.8rem; color: #c7d2fe;
+        }
+        .settlement-attr-item { display: flex; justify-content: space-between; }
+        .settlement-attr-val { font-weight: 700; }
+        .settlement-actions {
+            display: flex; gap: 10px; padding: 16px 20px 24px; justify-content: center;
+        }
+        .btn-settlement {
+            flex: 1; padding: 11px 0; border-radius: 20px; border: none;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            font-family: var(--font-ui); letter-spacing: 0.3px;
+            transition: all var(--transition-fast);
+        }
+        .btn-settlement:active { transform: scale(0.95); }
+        .btn-settlement.primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        }
+        .btn-settlement.secondary {
+            background: rgba(255,255,255,0.1); color: #c7d2fe;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        /* Input area */
+        .input-area {
+            flex-shrink: 0; display: flex; align-items: center;
+            gap: 10px; padding: 12px 14px 18px;
+            background: var(--bg-input); border-top: 1px solid rgba(0,0,0,0.06);
+            z-index: 10; transition: all var(--transition-fast);
+        }
+        @supports(padding-bottom: env(safe-area-inset-bottom)) {
+            .input-area { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+        }
+        .input-area.disabled { opacity: 0.5; pointer-events: none; }
+        .input-field {
+            flex: 1; padding: 12px 16px; border-radius: 24px;
+            border: 1.5px solid #e0dbd0; background: #faf9f6;
+            font-size: 0.9rem; font-family: var(--font-ui);
+            color: var(--text-primary); outline: none;
+            transition: all var(--transition-fast); min-width: 0;
+            letter-spacing: 0.3px;
+        }
+        .input-field:focus { border-color: #c9b896; box-shadow: 0 0 0 3px rgba(201,169,110,0.1); background: #fff; }
+        .input-field::placeholder { color: #bfb8ab; letter-spacing: 0.2px; }
+        .btn-send {
+            width: 42px; height: 42px; border-radius: 50%; border: none;
+            background: #4a6741; color: #fff; cursor: pointer; font-size: 1.1rem;
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            transition: all var(--transition-fast); box-shadow: 0 2px 8px rgba(74,103,65,0.25);
+        }
+        .btn-send:active { transform: scale(0.9); background: #3d5536; }
+        .btn-send.loading { background: #b8a898; pointer-events: none; animation: sendPulse 1s ease-in-out infinite; }
+        @keyframes sendPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex; gap: 4px; padding: 4px 0;
+            align-self: flex-start; margin-left: 16px;
+        }
+        .typing-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #c9b896; animation: dotBounce 1.2s ease-in-out infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+            40% { transform: translateY(-8px); opacity: 1; }
+        }
+
+        /* Overlay + Attribute drawer */
+        .overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.35);
+            z-index: 30; opacity: 0; pointer-events: none;
+            transition: opacity var(--transition-smooth);
+        }
+        .overlay.active { opacity: 1; pointer-events: auto; }
+        .attr-drawer {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: #fffef9; border-radius: 20px 20px 0 0;
+            z-index: 40; padding: 24px 20px 32px;
+            transform: translateY(105%); transition: transform var(--transition-smooth);
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+            max-height: 70vh; overflow-y: auto;
+        }
+        @supports(padding-bottom: env(safe-area-inset-bottom)) {
+            .attr-drawer { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+        }
+        .attr-drawer.active { transform: translateY(0); }
+        .attr-drawer-handle { width: 40px; height: 4px; border-radius: 2px; background: #d5cfc2; margin: 0 auto 20px; }
+        .attr-drawer-title {
+            font-family: var(--font-narrative); font-size: 1.1rem;
+            font-weight: 700; color: var(--text-primary);
+            letter-spacing: 0.5px; margin-bottom: 18px; text-align: center;
+        }
+        .attr-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .attr-label {
+            width: 48px; font-size: 0.82rem; font-weight: 600;
+            color: var(--text-primary); text-align: right; flex-shrink: 0;
+            letter-spacing: 0.3px;
+        }
+        .attr-bar-wrap {
+            flex: 1; height: 22px; background: #f0ede6;
+            border-radius: 11px; overflow: hidden; position: relative;
+        }
+        .attr-bar-fill {
+            height: 100%; border-radius: 11px;
+            transition: width 0.6s cubic-bezier(0.4,0,0.2,1), background-color 0.6s;
+            position: relative;
+        }
+        .attr-bar-fill.high { background: linear-gradient(90deg, #5b8c6b, #7aab85); }
+        .attr-bar-fill.mid { background: linear-gradient(90deg, #c9a96e, #d4b87a); }
+        .attr-bar-fill.low { background: linear-gradient(90deg, #c07a6e, #d49585); }
+        .attr-bar-fill.flash-green { animation: barFlashGreen 0.8s ease-out; }
+        .attr-bar-fill.flash-red { animation: barFlashRed 0.8s ease-out; }
+        @keyframes barFlashGreen { 0% { filter: brightness(1.6); } 100% { filter: brightness(1); } }
+        @keyframes barFlashRed { 0% { filter: brightness(0.6) saturate(1.5); } 100% { filter: brightness(1); } }
+        .attr-value {
+            width: 28px; text-align: center; font-weight: 700;
+            font-size: 0.9rem; color: var(--text-primary); flex-shrink: 0;
+            transition: all var(--transition-fast);
+        }
+        .attr-value.changed-positive { color: #3d6b47; animation: valBounce 0.5s ease-out; }
+        .attr-value.changed-negative { color: #a8403a; animation: valBounce 0.5s ease-out; }
+        @keyframes valBounce {
+            0% { transform: scale(1.6); }
+            60% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .trait-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+        .trait-tag {
+            font-size: 0.75rem; padding: 6px 14px; border-radius: 16px;
+            background: #f5f1e8; color: #6b5d4a; font-weight: 500;
+            letter-spacing: 0.3px; border: 1px solid #e5dcc8;
+        }
+        .trait-tag.talent { background: #fff8e7; border-color: #e5d4a0; color: #8a6d2b; }
+        .section-label {
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;
+            color: #b0a590; margin: 14px 0 8px; font-weight: 600;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(16px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in-up { animation: fadeInUp 0.5s ease-out; }
+
+        .screen-glow {
+            position: absolute; inset: 0; pointer-events: none; z-index: 20;
+            background: radial-gradient(ellipse at center, rgba(255,240,200,0.25) 0%, transparent 70%);
+            opacity: 0; transition: opacity 0.3s ease-out; border-radius: inherit;
+        }
+        .screen-glow.flash { opacity: 1; transition: opacity 0.1s ease-in; }
+
+        /* Responsive */
+        @media (max-width: 380px) {
+            .bubble { max-width: 88%; padding: 10px 14px; font-size: 0.85rem; }
+            .header { padding: 10px 12px 8px; }
+            .input-area { padding: 10px 10px 14px; gap: 8px; }
+            .input-field { padding: 10px 14px; font-size: 0.82rem; }
+            .btn-send { width: 38px; height: 38px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell" id="appShell">
+        <div class="screen-glow" id="screenGlow"></div>
+
+        <header class="header">
+            <div class="header-left">
+                <div class="header-icon">📖</div>
+                <div class="header-title-group">
+                    <span class="header-title">浮生渡</span>
+                    <span class="header-subtitle" id="stageLabel">准备开始</span>
+                    <span class="header-subtitle" id="yearLabel" style="font-size:0.65rem;color:#8a7a5c;"></span>
+                    <span class="header-subtitle" id="versionLabel" style="font-size:0.6rem;color:#9a8a6a;margin-top:2px;"></span>
+                </div>
+            </div>
+            <span class="header-age-badge" id="ageBadge">—岁</span>
+            <button class="btn-attr" id="btnAttr" title="查看属性">📊</button>
+        </header>
+
+        <main class="chat-area" id="chatArea">
+            <div class="welcome-card" id="welcomeCard">
+                <div class="welcome-icon">🌱</div>
+                <div class="welcome-title">浮生渡</div>
+                <div class="welcome-desc">用文字书写你的第二人生。<br>每一次选择，都将改变命运的走向。</div>
+                <button class="btn-start" id="btnStart">✨ 开始新人生</button>
+                <div class="name-input-area" id="nameInputArea">
+                    <input type="text" class="name-field" id="nameField" placeholder="请输入你的名字..." autocomplete="off" />
+                    <div class="gender-select">
+                        <button class="gender-btn male active" id="genderMale" data-gender="男">👦 男</button>
+                        <button class="gender-btn female" id="genderFemale" data-gender="女">👧 女</button>
+                    </div>
+                    <div class="attr-alloc-panel visible" id="attrAllocPanel">
+                        <div class="attr-alloc-header">
+                            <span class="attr-alloc-title">🎨 分配初始属性</span>
+                            <span class="attr-alloc-points" id="allocPoints">剩余 20 点</span>
+                        </div>
+                        <div class="alloc-row">
+                            <span class="alloc-label">💫 颜值</span>
+                            <button class="alloc-btn minus" data-attr="appearance">−</button>
+                            <input type="range" class="alloc-slider" id="slider_appearance" min="0" max="10" value="5" data-attr="appearance" />
+                            <button class="alloc-btn plus" data-attr="appearance">+</button>
+                            <span class="alloc-val" id="val_appearance">5</span>
+                        </div>
+                        <div class="alloc-row">
+                            <span class="alloc-label">🧠 智力</span>
+                            <button class="alloc-btn minus" data-attr="intelligence">−</button>
+                            <input type="range" class="alloc-slider" id="slider_intelligence" min="0" max="10" value="5" data-attr="intelligence" />
+                            <button class="alloc-btn plus" data-attr="intelligence">+</button>
+                            <span class="alloc-val" id="val_intelligence">5</span>
+                        </div>
+                        <div class="alloc-row">
+                            <span class="alloc-label">💪 体质</span>
+                            <button class="alloc-btn minus" data-attr="constitution">−</button>
+                            <input type="range" class="alloc-slider" id="slider_constitution" min="0" max="10" value="5" data-attr="constitution" />
+                            <button class="alloc-btn plus" data-attr="constitution">+</button>
+                            <span class="alloc-val" id="val_constitution">5</span>
+                        </div>
+                        <div class="alloc-row">
+                            <span class="alloc-label">💰 家境</span>
+                            <button class="alloc-btn minus" data-attr="wealth">−</button>
+                            <input type="range" class="alloc-slider" id="slider_wealth" min="0" max="10" value="5" data-attr="wealth" />
+                            <button class="alloc-btn plus" data-attr="wealth">+</button>
+                            <span class="alloc-val" id="val_wealth">5</span>
+                        </div>
+                        <div class="alloc-hint" style="text-align:center;font-size:0.75rem;color:var(--text-secondary);margin-top:6px;">😊 快乐初始为5，随游戏进程变化</div>
+                        <button class="btn-rand-attr" id="btnRandAttr">🎲 随机分配</button>
+                    </div>
+                    <button class="btn-confirm-name" id="btnConfirmName">确认开始</button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="input-area disabled" id="inputArea">
+            <input type="text" class="input-field" id="inputField" placeholder="输入你想做的事..." autocomplete="off" disabled />
+            <button class="btn-send" id="btnSend" disabled>▶</button>
+        </footer>
+
+        <div class="overlay" id="overlay"></div>
+        <div class="attr-drawer" id="attrDrawer">
+            <div class="attr-drawer-handle"></div>
+            <div class="attr-drawer-title">📋 属性面板</div>
+            <div id="attrContent"></div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        const API_BASE = 'http://localhost:8000';
+
+        // DOM
+        const chatArea = document.getElementById('chatArea');
+        const inputArea = document.getElementById('inputArea');
+        const inputField = document.getElementById('inputField');
+        const btnSend = document.getElementById('btnSend');
+        const btnAttr = document.getElementById('btnAttr');
+        const ageBadge = document.getElementById('ageBadge');
+        const stageLabel = document.getElementById('stageLabel');
+        const welcomeCard = document.getElementById('welcomeCard');
+        const screenGlow = document.getElementById('screenGlow');
+        const overlay = document.getElementById('overlay');
+        const attrDrawer = document.getElementById('attrDrawer');
+        const attrContent = document.getElementById('attrContent');
+        const btnStart = document.getElementById('btnStart');
+        const nameInputArea = document.getElementById('nameInputArea');
+        const nameField = document.getElementById('nameField');
+        const btnConfirmName = document.getElementById('btnConfirmName');
+        const attrAllocPanel = document.getElementById('attrAllocPanel');
+        const allocPointsEl = document.getElementById('allocPoints');
+        const btnRandAttr = document.getElementById('btnRandAttr');
+        const versionLabel = document.getElementById('versionLabel');
+
+        // Fetch backend version on load
+        fetch(API_BASE + '/api/version')
+            .then(function(r) { return r.json(); })
+            .then(function(d) { versionLabel.textContent = 'v' + d.version; })
+            .catch(function() { versionLabel.textContent = 'v?'; });
+
+        // State
+        let gameId = null;
+        let playerState = null;
+        let isLoading = false;
+        let lastAttrChanges = null;
+
+        const TOTAL_POINTS = 20;
+        const ATTR_KEYS = ['appearance', 'intelligence', 'constitution', 'wealth'];
+        let allocAttrs = { appearance: 5, intelligence: 5, constitution: 5, wealth: 5 };
+        let selectedGender = '男';
+
+        const ATTR_LABELS = {
+            appearance: '颜值', intelligence: '智力',
+            constitution: '体质', wealth: '家境', happiness: '快乐'
+        };
+        const ATTR_ICONS = {
+            appearance: '💫', intelligence: '🧠',
+            constitution: '💪', wealth: '💰', happiness: '😊'
+        };
+        const SCORE_LABELS = {
+            strategy: '策略', logic: '逻辑',
+            social: '社交', role_consistency: '一致'
+        };
+
+        // Helpers
+        function getStageName(stage) {
+            const map = {
+                newborn: '新生儿', infant: '婴儿', child: '儿童',
+                teen: '少年', adult: '成年', middle_age: '中年',
+                senior: '老年', elder: '晚年'
+            };
+            return map[stage] || stage;
+        }
+
+        function getAttrColorClass(val) {
+            if (val >= 7) return 'high';
+            if (val >= 4) return 'mid';
+            return 'low';
+        }
+
+        function scrollToBottom() {
+            requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; });
+        }
+
+        function triggerScreenGlow() {
+            screenGlow.classList.add('flash');
+            setTimeout(() => screenGlow.classList.remove('flash'), 350);
+        }
+
+        function pulseAgeBadge() {
+            ageBadge.classList.remove('pulse');
+            void ageBadge.offsetWidth;
+            ageBadge.classList.add('pulse');
+        }
+
+        function updateHeader() {
+            if (!playerState) return;
+            ageBadge.textContent = playerState.age + '岁';
+            stageLabel.textContent = getStageName(playerState.stage);
+            // 显示年份和世界背景
+            var flags = playerState.flags || {};
+            var world = flags.world_setting || '';
+            var birthYear = flags.birth_year;
+            var currentYear = flags.current_year;
+            var yearText = '';
+            if (currentYear) {
+                yearText = currentYear + '年';
+            } else if (birthYear) {
+                yearText = (birthYear + playerState.age) + '年';
+            }
+            if (world && yearText) {
+                yearLabel.textContent = '🌍 ' + world + ' · ' + yearText;
+            } else if (world) {
+                yearLabel.textContent = '🌍 ' + world;
+            } else if (yearText) {
+                yearLabel.textContent = yearText;
+            }
+            pulseAgeBadge();
+        }
+
+        // Attribute allocation
+        function getAllocTotal() {
+            var sum = 0;
+            for (var i = 0; i < ATTR_KEYS.length; i++) sum += allocAttrs[ATTR_KEYS[i]];
+            return sum;
+        }
+
+        function updateAllocUI() {
+            var total = getAllocTotal();
+            var remain = TOTAL_POINTS - total;
+            allocPointsEl.textContent = '剩余 ' + remain + ' 点';
+            allocPointsEl.classList.remove('zero', 'over');
+            if (remain === 0) allocPointsEl.classList.add('zero');
+            else if (remain < 0) allocPointsEl.classList.add('over');
+
+            for (var i = 0; i < ATTR_KEYS.length; i++) {
+                var key = ATTR_KEYS[i];
+                var val = allocAttrs[key];
+                var slider = document.getElementById('slider_' + key);
+                var valEl = document.getElementById('val_' + key);
+                if (slider) slider.value = val;
+                if (valEl) valEl.textContent = val;
+            }
+        }
+
+        function changeAllocAttr(key, delta) {
+            var newVal = allocAttrs[key] + delta;
+            if (newVal < 0 || newVal > 10) return;
+            // Check total
+            var newTotal = getAllocTotal() + delta;
+            if (newTotal > TOTAL_POINTS) return;
+            allocAttrs[key] = newVal;
+            updateAllocUI();
+        }
+
+        function randomizeAttrs() {
+            var remaining = TOTAL_POINTS;
+            var keys = ATTR_KEYS.slice();
+            // Shuffle keys for fairness
+            for (var i = keys.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = keys[i]; keys[i] = keys[j]; keys[j] = tmp;
+            }
+            // Reset all to 0
+            for (var i = 0; i < keys.length; i++) allocAttrs[keys[i]] = 0;
+            // Distribute points
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var isLast = (i === keys.length - 1);
+                if (isLast) {
+                    allocAttrs[key] = Math.min(10, remaining);
+                } else {
+                    var maxHere = Math.min(10, remaining - (keys.length - 1 - i));
+                    var val = Math.floor(Math.random() * (maxHere + 1));
+                    allocAttrs[key] = val;
+                    remaining -= val;
+                }
+            }
+            updateAllocUI();
+        }
+
+        // Typewriter
+        function typewriter(el, text, speed) {
+            speed = speed || 25;
+            return new Promise(function(resolve) {
+                let i = 0;
+                el.textContent = '';
+                function tick() {
+                    if (i < text.length) {
+                        el.textContent += text.charAt(i);
+                        i++;
+                        scrollToBottom();
+                        var ch = text.charAt(i - 1);
+                        var d = (ch === '。' || ch === '！' || ch === '？' || ch === '…' || ch === '\n') ? speed * 3 :
+                                (ch === '，' || ch === '、' || ch === '；') ? speed * 2 : speed;
+                        setTimeout(tick, d);
+                    } else { resolve(); }
+                }
+                tick();
+            });
+        }
+
+        // Render functions
+        function addPlayerBubble(text) {
+            var row = document.createElement('div');
+            row.className = 'bubble-row player fade-in-up';
+            var label = document.createElement('div');
+            label.className = 'bubble-label';
+            label.textContent = '你的行动';
+            row.appendChild(label);
+            var bubble = document.createElement('div');
+            bubble.className = 'bubble player';
+            bubble.textContent = text;
+            row.appendChild(bubble);
+            chatArea.appendChild(row);
+            scrollToBottom();
+        }
+
+        function addNarrativeBubble(text, useTypewriter) {
+            var row = document.createElement('div');
+            row.className = 'bubble-row system fade-in-up';
+            var label = document.createElement('div');
+            label.className = 'bubble-label';
+            label.textContent = '命运叙事';
+            row.appendChild(label);
+            var bubble = document.createElement('div');
+            bubble.className = 'bubble system';
+            bubble.textContent = '';
+            row.appendChild(bubble);
+            chatArea.appendChild(row);
+            if (useTypewriter) {
+                return typewriter(bubble, text, 22);
+            } else {
+                bubble.textContent = text;
+                scrollToBottom();
+                return Promise.resolve();
+            }
+        }
+
+        function addSceneIntro(text) {
+            var row = document.createElement('div');
+            var bubble = document.createElement('div');
+            bubble.className = 'bubble system scene-intro';
+            // 优先用 birth_year + age 计算年份，避免AI new_flags污染current_year
+            var yearPrefix = '';
+            if (playerState && playerState.flags) {
+                var birthYear = playerState.flags.birth_year;
+                var age = playerState.age;
+                var calcYear = (birthYear != null && age != null) ? birthYear + age : null;
+                var storedYear = playerState.flags.current_year;
+                // 如果计算值和存储值不一致，用计算值（更可靠）
+                var year = (calcYear != null) ? calcYear : storedYear;
+                if (year) {
+                    yearPrefix = year + '年 · ';
+                }
+            }
+            bubble.textContent = '📍 ' + yearPrefix + text;
+            row.appendChild(bubble);
+            chatArea.appendChild(row);
+            scrollToBottom();
+        }
+
+        function addScoreCard(score, attrChanges) {
+            var card = document.createElement('div');
+            card.className = 'score-card';
+            var html = '<span class="score-big">' + score.total + '</span>';
+            html += '<span style="font-size:0.75rem;color:#8a7a5c;">/20</span>';
+            html += '<span class="score-divider"></span>';
+            html += '<span class="score-breakdown">';
+            var dims = ['strategy','logic','social','role_consistency'];
+            for (var i = 0; i < dims.length; i++) {
+                var d = dims[i];
+                html += '<span>' + SCORE_LABELS[d] + ':<b>' + score[d] + '</b></span>';
+            }
+            html += '</span>';
+            // attr change tags
+            if (attrChanges) {
+                var tags = [];
+                for (var k in attrChanges) {
+                    if (attrChanges[k] !== 0 && ATTR_LABELS[k]) {
+                        var v = attrChanges[k];
+                        var cls = v > 0 ? 'positive' : 'negative';
+                        var sign = v > 0 ? '+' : '';
+                        tags.push('<span class="attr-tag ' + cls + '">' + ATTR_LABELS[k] + ' ' + sign + v + '</span>');
+                    }
+                }
+                if (tags.length > 0) {
+                    html += '<span class="attr-change-tags">' + tags.join('') + '</span>';
+                }
+            }
+            if (score.comments) {
+                html += '<div class="score-comment">' + score.comments + '</div>';
+            }
+            card.innerHTML = html;
+            chatArea.appendChild(card);
+            scrollToBottom();
+            if (attrChanges && Object.values(attrChanges).some(function(v) { return v > 0; })) {
+                triggerScreenGlow();
+            }
+        }
+
+        function addChoices(choices) {
+            removeChoices();
+            var area = document.createElement('div');
+            area.className = 'choices-area';
+            area.id = 'choicesArea';
+            var label = document.createElement('div');
+            label.className = 'choices-label';
+            label.textContent = '🤔 你的选择';
+            area.appendChild(label);
+            for (var i = 0; i < choices.length; i++) {
+                (function(idx) {
+                    var c = choices[idx];
+                    var btn = document.createElement('button');
+                    btn.className = 'choice-btn';
+                    var inner = document.createElement('div');
+                    inner.className = 'choice-inner';
+                    var letter = document.createElement('span');
+                    letter.className = 'choice-letter';
+                    letter.textContent = String.fromCharCode(65 + idx);
+                    var textWrap = document.createElement('div');
+                    textWrap.className = 'choice-text-wrap';
+                    var textP = document.createElement('div');
+                    textP.className = 'choice-text';
+                    textP.textContent = c.text;
+                    textWrap.appendChild(textP);
+                    if (c.hint) {
+                        var hintP = document.createElement('div');
+                        hintP.className = 'choice-hint';
+                        hintP.textContent = c.hint;
+                        textWrap.appendChild(hintP);
+                    }
+                    inner.appendChild(letter);
+                    inner.appendChild(textWrap);
+                    btn.appendChild(inner);
+                    btn.addEventListener('click', function() { selectChoice(c.text); });
+                    area.appendChild(btn);
+                })(i);
+            }
+            var orDiv = document.createElement('div');
+            orDiv.className = 'choice-or';
+            orDiv.textContent = '或在下方输入自定义行动';
+            area.appendChild(orDiv);
+            chatArea.appendChild(area);
+            scrollToBottom();
+        }
+
+        function removeChoices() {
+            var el = document.getElementById('choicesArea');
+            if (el) el.remove();
+        }
+
+        function addEndingCard(isBad, title, subtitle, summary) {
+            // Remove any existing settlement
+            var existing = document.getElementById('settlementOverlay');
+            if (existing) existing.remove();
+
+            var overlay = document.createElement('div');
+            overlay.className = 'settlement-overlay';
+            overlay.id = 'settlementOverlay';
+
+            var attrs = playerState ? playerState.attributes : {};
+            var gender = playerState ? (playerState.gender === '女' ? '♀' : '♂') : '';
+            var name = playerState ? playerState.name : '';
+            var age = playerState ? playerState.age : '?';
+
+            var html = '<div class="settlement-card">';
+            html += '<div class="settlement-header">';
+            html += '<div class="settlement-icon">' + (isBad ? '🕯️' : '📖') + '</div>';
+            html += '<div class="settlement-game-name">浮生渡</div>';
+            html += '<div class="settlement-ending">' + title + '</div>';
+            html += '<div class="settlement-info">' + gender + ' ' + name + ' · 终年 ' + age + ' 岁</div>';
+            html += '</div>';
+
+            // AI short comment
+            if (summary && summary.short_comment) {
+                html += '<div class="settlement-section">';
+                html += '<div class="settlement-comment">「' + summary.short_comment + '」</div>';
+                html += '</div>';
+            }
+
+            // Life summary
+            if (summary && summary.life_summary) {
+                html += '<div class="settlement-section">';
+                html += '<div class="settlement-section-title">📜 人生总结</div>';
+                html += '<p>' + summary.life_summary + '</p>';
+                html += '</div>';
+            }
+
+            // Personality analysis
+            if (summary && summary.personality_analysis) {
+                html += '<div class="settlement-section">';
+                html += '<div class="settlement-section-title">🧠 人格分析</div>';
+                html += '<p>' + summary.personality_analysis + '</p>';
+                html += '</div>';
+            }
+
+            // Final attributes
+            if (attrs && attrs.appearance !== undefined) {
+                html += '<div class="settlement-section">';
+                html += '<div class="settlement-section-title">📊 最终属性</div>';
+                html += '<div class="settlement-attrs">';
+                var attrItems = [
+                    ['💫 颜值', attrs.appearance], ['🧠 智力', attrs.intelligence],
+                    ['💪 体质', attrs.constitution], ['💰 家境', attrs.wealth],
+                    ['😊 快乐', attrs.happiness]
+                ];
+                for (var i = 0; i < attrItems.length; i++) {
+                    var val = attrItems[i][1];
+                    var color = val >= 7 ? '#a5f3fc' : (val >= 4 ? '#c7d2fe' : '#fca5a5');
+                    html += '<div class="settlement-attr-item"><span>' + attrItems[i][0] + '</span><span class="settlement-attr-val" style="color:' + color + '">' + val + '</span></div>';
+                }
+                html += '</div></div>';
+            }
+
+            // No summary placeholder
+            if (!summary) {
+                html += '<div class="settlement-section" style="text-align:center;">';
+                html += '<div style="font-size:0.85rem;color:#a5b4fc;">AI 正在总结你的一生...</div>';
+                html += '</div>';
+            }
+
+            // Actions
+            html += '<div class="settlement-actions">';
+            html += '<button class="btn-settlement secondary" id="btnShareSettlement">🔗 分享</button>';
+            html += '<button class="btn-settlement primary" id="btnRestartSettlement">🔄 重新开始</button>';
+            html += '</div>';
+            html += '</div>';
+
+            overlay.innerHTML = html;
+            document.body.appendChild(overlay);
+
+            document.getElementById('btnRestartSettlement').addEventListener('click', function() {
+                overlay.remove();
+                restartGame();
+            });
+            document.getElementById('btnShareSettlement').addEventListener('click', function() {
+                shareSettlement(title, summary);
+            });
+            scrollToBottom();
+        }
+
+        function shareSettlement(ending, summary) {
+            var text = '🎭 浮生渡 · ' + ending;
+            if (playerState) {
+                var gender = playerState.gender === '女' ? '♀' : '♂';
+                text += '\n' + gender + ' ' + playerState.name + ' · 终年' + playerState.age + '岁';
+            }
+            if (summary && summary.short_comment) {
+                text += '\n\n「' + summary.short_comment + '」';
+            }
+            text += '\n\n#浮生渡 #AI人生模拟';
+            if (navigator.share) {
+                navigator.share({ title: '浮生渡', text: text }).catch(function() {});
+            } else {
+                navigator.clipboard.writeText(text).then(function() {
+                    alert('已复制到剪贴板！');
+                }).catch(function() {
+                    prompt('复制以下文字分享：', text);
+                });
+            }
+        }
+
+        function addTypingIndicator() {
+            var el = document.createElement('div');
+            el.className = 'typing-indicator fade-in-up';
+            el.id = 'typingIndicator';
+            el.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            chatArea.appendChild(el);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            var el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        // Attribute panel
+        function renderAttrPanel() {
+            if (!playerState) return;
+            var attrs = playerState.attributes;
+            var html = '';
+            for (var key in ATTR_LABELS) {
+                var val = attrs[key];
+                var colorClass = getAttrColorClass(val);
+                var changedClass = '';
+                var barFlash = '';
+                if (lastAttrChanges && lastAttrChanges[key] && lastAttrChanges[key] !== 0) {
+                    changedClass = lastAttrChanges[key] > 0 ? 'changed-positive' : 'changed-negative';
+                    barFlash = lastAttrChanges[key] > 0 ? 'flash-green' : 'flash-red';
+                }
+                html += '<div class="attr-row">' +
+                    '<span class="attr-label">' + ATTR_ICONS[key] + ' ' + ATTR_LABELS[key] + '</span>' +
+                    '<div class="attr-bar-wrap">' +
+                    '<div class="attr-bar-fill ' + colorClass + ' ' + barFlash + '" style="width:' + Math.max(0, Math.min(100, val * 10)) + '%;"></div>' +
+                    '</div>' +
+                    '<span class="attr-value ' + changedClass + '">' + val + '</span>' +
+                    '</div>';
+            }
+            if (playerState.talents && playerState.talents.length > 0) {
+                html += '<div class="section-label">🌟 天赋</div><div class="trait-tags">';
+                playerState.talents.forEach(function(t) {
+                    html += '<span class="trait-tag talent">' + t + '</span>';
+                });
+                html += '</div>';
+            }
+            attrContent.innerHTML = html;
+        }
+
+        function openAttrPanel() {
+            renderAttrPanel();
+            attrDrawer.classList.add('active');
+            overlay.classList.add('active');
+        }
+
+        function closeAttrPanel() {
+            attrDrawer.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        // Enable/disable input
+        function enableInput() {
+            inputArea.classList.remove('disabled');
+            inputField.disabled = false;
+            btnSend.disabled = false;
+            btnSend.classList.remove('loading');
+        }
+
+        function disableInput() {
+            inputField.disabled = true;
+            btnSend.disabled = true;
+            btnSend.classList.add('loading');
+        }
+
+        // API calls
+        async function apiStartGame(name, gender, attributes) {
+            var resp = await fetch(API_BASE + '/api/game/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, gender: gender, attributes: attributes })
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            return resp.json();
+        }
+
+        async function apiSendAction(gid, text) {
+            var resp = await fetch(API_BASE + '/api/game/' + gid + '/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ input: text })
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            return resp.json();
+        }
+
+        // Game flow
+        async function startGame() {
+            var name = nameField.value.trim();
+            if (!name) { nameField.focus(); return; }
+
+            // Validate total points
+            var total = getAllocTotal();
+            if (total !== TOTAL_POINTS) {
+                alert('属性点总和必须为 ' + TOTAL_POINTS + ' 点，当前为 ' + total + ' 点');
+                return;
+            }
+
+            btnConfirmName.disabled = true;
+            btnConfirmName.textContent = '正在生成...';
+
+            try {
+                var data = await apiStartGame(name, selectedGender, allocAttrs);
+                gameId = data.game_id;
+                playerState = data.state;
+
+                // Clear welcome
+                if (welcomeCard) welcomeCard.remove();
+
+                updateHeader();
+                renderAttrPanel();
+                enableInput();
+                inputField.placeholder = '选择上方选项，或输入自定义行动...';
+
+                // Show initial narrative with typewriter
+                if (data.narrative) {
+                    await addNarrativeBubble(data.narrative, true);
+                } else {
+                    addSceneIntro(data.scene_description || '新的人生开始了...');
+                }
+
+                // Show score card if present
+                if (data.score && data.score.total) {
+                    await new Promise(function(r) { setTimeout(r, 300); });
+                    addScoreCard(data.score, data.attribute_changes);
+                }
+
+                // Update state from response
+                if (data.attribute_changes) {
+                    lastAttrChanges = data.attribute_changes;
+                    if (Object.values(data.attribute_changes).some(function(v) { return v !== 0; })) {
+                        btnAttr.classList.add('has-change');
+                    }
+                }
+
+                // Show scene intro
+                if (data.scene_title) {
+                    await new Promise(function(r) { setTimeout(r, 500); });
+                    addSceneIntro(data.scene_title + (data.scene_description ? '\n' + data.scene_description : ''));
+                }
+
+                // Show choices immediately — this is the first turn, no need for player to trigger
+                if (data.choices && data.choices.length > 0) {
+                    await new Promise(function(r) { setTimeout(r, 300); });
+                    addChoices(data.choices);
+                }
+
+                // Clear attr change highlights after delay
+                setTimeout(function() {
+                    lastAttrChanges = null;
+                    btnAttr.classList.remove('has-change');
+                    renderAttrPanel();
+                }, 1200);
+
+                inputField.focus();
+            } catch (err) {
+                alert('连接失败: ' + err.message);
+                btnConfirmName.disabled = false;
+                btnConfirmName.textContent = '确认开始';
+            }
+        }
+
+        async function sendAction(text) {
+            if (!text || !gameId || isLoading || (playerState && playerState.game_over)) return;
+
+            isLoading = true;
+            removeChoices();
+            addPlayerBubble(text);
+            disableInput();
+            inputField.value = '';
+            addTypingIndicator();
+
+            try {
+                var data = await apiSendAction(gameId, text);
+                removeTypingIndicator();
+
+                // Narrative with typewriter
+                await addNarrativeBubble(data.narrative, true);
+
+                // Score card
+                if (data.score && data.score.total) {
+                    await new Promise(function(r) { setTimeout(r, 300); });
+                    addScoreCard(data.score, data.attribute_changes);
+                }
+
+                // Update state
+                if (data.state) {
+                    lastAttrChanges = data.attribute_changes || null;
+                    playerState = data.state;
+                    updateHeader();
+                    renderAttrPanel();
+                    if (lastAttrChanges && Object.values(lastAttrChanges).some(function(v) { return v !== 0; })) {
+                        btnAttr.classList.add('has-change');
+                    }
+                }
+
+                // Scene intro
+                if (data.scene_title) {
+                    await new Promise(function(r) { setTimeout(r, 500); });
+                    addSceneIntro(data.scene_title + (data.scene_description ? '\n' + data.scene_description : ''));
+                }
+
+                // Choices
+                if (data.choices && data.choices.length > 0) {
+                    await new Promise(function(r) { setTimeout(r, 300); });
+                    addChoices(data.choices);
+                }
+
+                // Check game over
+                if (playerState && playerState.game_over) {
+                    var ending = (playerState.flags && playerState.flags.ending) || '未知结局';
+                    var isBad = ending === '夭折';
+                    await new Promise(function(r) { setTimeout(r, 600); });
+                    addEndingCard(isBad, ending, '', data.summary || null);
+                    inputArea.classList.add('disabled');
+                    inputField.disabled = true;
+                    btnSend.disabled = true;
+                    btnSend.classList.add('loading');
+                    isLoading = false;
+                    return;
+                }
+
+                enableInput();
+                inputField.focus();
+
+                // Clear attr change highlights after delay
+                setTimeout(function() {
+                    lastAttrChanges = null;
+                    btnAttr.classList.remove('has-change');
+                    renderAttrPanel();
+                }, 1200);
+
+            } catch (err) {
+                removeTypingIndicator();
+                addNarrativeBubble('❌ 错误: ' + err.message, false);
+                enableInput();
+            }
+
+            isLoading = false;
+            scrollToBottom();
+        }
+
+        function selectChoice(text) {
+            if (isLoading || (playerState && playerState.game_over)) return;
+            inputField.value = '';
+            sendAction(text);
+        }
+
+        function restartGame() {
+            gameId = null;
+            playerState = null;
+            isLoading = false;
+            lastAttrChanges = null;
+
+            // Reset attrs
+            allocAttrs = { appearance: 5, intelligence: 5, constitution: 5, wealth: 5 };
+            selectedGender = '男';
+
+            // Remove settlement overlay
+            var so = document.getElementById('settlementOverlay');
+            if (so) so.remove();
+
+            // Clear chat
+            var items = chatArea.querySelectorAll('.bubble-row, .score-card, .ending-card, .typing-indicator, .choices-area');
+            items.forEach(function(el) { el.remove(); });
+
+            // Re-add welcome card
+            var wc = document.createElement('div');
+            wc.className = 'welcome-card';
+            wc.id = 'welcomeCard';
+            wc.innerHTML =
+                '<div class="welcome-icon">🌱</div>' +
+                '<div class="welcome-title">浮生渡</div>' +
+                '<div class="welcome-desc">用文字书写你的第二人生。<br>每一次选择，都将改变命运的走向。</div>' +
+                '<div class="name-input-area visible">' +
+                '<input type="text" class="name-field" id="nameField2" placeholder="请输入你的名字..." autocomplete="off" />' +
+                '<div class="gender-select">' +
+                '<button class="gender-btn male active" id="genderMale2" data-gender="男">👦 男</button>' +
+                '<button class="gender-btn female" id="genderFemale2" data-gender="女">👧 女</button>' +
+                '</div>' +
+                '<div class="attr-alloc-panel visible" id="attrAllocPanel2">' +
+                '<div class="attr-alloc-header"><span class="attr-alloc-title">🎨 分配初始属性</span><span class="attr-alloc-points" id="allocPoints2">剩余 20 点</span></div>' +
+                '<div class="alloc-row"><span class="alloc-label">💫 颜值</span><button class="alloc-btn minus" data-attr="appearance">−</button><input type="range" class="alloc-slider" id="slider2_appearance" min="0" max="10" value="4" data-attr="appearance" /><button class="alloc-btn plus" data-attr="appearance">+</button><span class="alloc-val" id="val2_appearance">4</span></div>' +
+                '<div class="alloc-row"><span class="alloc-label">🧠 智力</span><button class="alloc-btn minus" data-attr="intelligence">−</button><input type="range" class="alloc-slider" id="slider2_intelligence" min="0" max="10" value="4" data-attr="intelligence" /><button class="alloc-btn plus" data-attr="intelligence">+</button><span class="alloc-val" id="val2_intelligence">4</span></div>' +
+                '<div class="alloc-row"><span class="alloc-label">💪 体质</span><button class="alloc-btn minus" data-attr="constitution">−</button><input type="range" class="alloc-slider" id="slider2_constitution" min="0" max="10" value="4" data-attr="constitution" /><button class="alloc-btn plus" data-attr="constitution">+</button><span class="alloc-val" id="val2_constitution">4</span></div>' +
+                '<div class="alloc-row"><span class="alloc-label">💰 家境</span><button class="alloc-btn minus" data-attr="wealth">−</button><input type="range" class="alloc-slider" id="slider2_wealth" min="0" max="10" value="4" data-attr="wealth" /><button class="alloc-btn plus" data-attr="wealth">+</button><span class="alloc-val" id="val2_wealth">4</span></div>' +
+                '<div class="alloc-hint" style="text-align:center;font-size:0.75rem;color:var(--text-secondary);margin-top:6px;">😊 快乐初始为5，随游戏进程变化</div>' +
+                '<button class="btn-rand-attr" id="btnRandAttr2">🎲 随机分配</button>' +
+                '</div>' +
+                '<button class="btn-confirm-name" id="btnConfirmName2">确认开始</button>' +
+                '</div>';
+            chatArea.appendChild(wc);
+
+            // Re-bind events for restart card
+            var nameField2 = document.getElementById('nameField2');
+            document.getElementById('btnConfirmName2').addEventListener('click', function() {
+                nameField.value = nameField2.value.trim();
+                startGame();
+            });
+            nameField2.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { nameField.value = nameField2.value.trim(); startGame(); }
+            });
+            document.getElementById('btnRandAttr2').addEventListener('click', randomizeAttrs);
+
+            // Re-bind gender buttons
+            document.querySelectorAll('#welcomeCard .gender-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    selectedGender = this.dataset.gender;
+                    document.querySelectorAll('#welcomeCard .gender-btn').forEach(function(b) { b.classList.remove('active'); });
+                    this.classList.add('active');
+                });
+            });
+
+            // Re-bind sliders & buttons for the new panel
+            document.querySelectorAll('#attrAllocPanel2 .alloc-slider').forEach(function(slider) {
+                slider.addEventListener('input', function() {
+                    var key = this.dataset.attr;
+                    var newVal = parseInt(this.value, 10);
+                    var oldVal = allocAttrs[key];
+                    var newTotal = getAllocTotal() - oldVal + newVal;
+                    if (newTotal > TOTAL_POINTS) {
+                        var remain = TOTAL_POINTS - (getAllocTotal() - oldVal);
+                        newVal = Math.min(10, Math.max(0, remain));
+                        this.value = newVal;
+                    }
+                    allocAttrs[key] = newVal;
+                    updateAllocUI2();
+                });
+            });
+            document.querySelectorAll('#attrAllocPanel2 .alloc-btn.minus').forEach(function(btn) {
+                btn.addEventListener('click', function() { changeAllocAttr(this.dataset.attr, -1); updateAllocUI2(); });
+            });
+            document.querySelectorAll('#attrAllocPanel2 .alloc-btn.plus').forEach(function(btn) {
+                btn.addEventListener('click', function() { changeAllocAttr(this.dataset.attr, 1); updateAllocUI2(); });
+            });
+
+            // Reset UI
+            inputArea.classList.add('disabled');
+            inputField.disabled = true;
+            btnSend.disabled = true;
+            btnSend.classList.remove('loading');
+            inputField.value = '';
+            ageBadge.textContent = '—岁';
+            stageLabel.textContent = '准备开始';
+            closeAttrPanel();
+            btnAttr.classList.remove('has-change');
+            scrollToBottom();
+        }
+
+        function updateAllocUI2() {
+            var total = getAllocTotal();
+            var remain = TOTAL_POINTS - total;
+            var el2 = document.getElementById('allocPoints2');
+            if (el2) {
+                el2.textContent = '剩余 ' + remain + ' 点';
+                el2.classList.remove('zero', 'over');
+                if (remain === 0) el2.classList.add('zero');
+                else if (remain < 0) el2.classList.add('over');
+            }
+            for (var i = 0; i < ATTR_KEYS.length; i++) {
+                var key = ATTR_KEYS[i];
+                var slider = document.getElementById('slider2_' + key);
+                var valEl = document.getElementById('val2_' + key);
+                if (slider) slider.value = allocAttrs[key];
+                if (valEl) valEl.textContent = allocAttrs[key];
+            }
+        }
+
+        // Events
+        btnStart.addEventListener('click', function() {
+            nameInputArea.classList.add('visible');
+            nameField.focus();
+        });
+
+        btnConfirmName.addEventListener('click', startGame);
+
+        nameField.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') startGame();
+        });
+
+        // Gender selection events
+        document.querySelectorAll('.gender-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                selectedGender = this.dataset.gender;
+                document.querySelectorAll('.gender-btn').forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+            });
+        });
+
+        // Attribute allocation events
+        btnRandAttr.addEventListener('click', randomizeAttrs);
+
+        // Slider change
+        document.querySelectorAll('.alloc-slider').forEach(function(slider) {
+            slider.addEventListener('input', function() {
+                var key = this.dataset.attr;
+                var newVal = parseInt(this.value, 10);
+                var oldVal = allocAttrs[key];
+                var diff = newVal - oldVal;
+                var newTotal = getAllocTotal() + diff;
+                if (newTotal > TOTAL_POINTS) {
+                    // Clamp: allow only up to remaining
+                    var remain = TOTAL_POINTS - (getAllocTotal() - oldVal);
+                    newVal = Math.min(10, Math.max(0, remain));
+                    this.value = newVal;
+                }
+                allocAttrs[key] = newVal;
+                updateAllocUI();
+            });
+        });
+
+        // +/- buttons
+        document.querySelectorAll('.alloc-btn.minus').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                changeAllocAttr(this.dataset.attr, -1);
+            });
+        });
+        document.querySelectorAll('.alloc-btn.plus').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                changeAllocAttr(this.dataset.attr, 1);
+            });
+        });
+
+        // Initialize allocation UI
+        updateAllocUI();
+
+        btnSend.addEventListener('click', function() {
+            var text = inputField.value.trim();
+            if (text) sendAction(text);
+        });
+
+        inputField.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                var text = inputField.value.trim();
+                if (text) sendAction(text);
+            }
+        });
+
+        btnAttr.addEventListener('click', function() {
+            if (attrDrawer.classList.contains('active')) closeAttrPanel();
+            else openAttrPanel();
+        });
+
+        overlay.addEventListener('click', closeAttrPanel);
+
+        // Touch swipe to close drawer
+        var touchStartY = 0;
+        attrDrawer.addEventListener('touchstart', function(e) { touchStartY = e.touches[0].clientY; });
+        attrDrawer.addEventListener('touchmove', function(e) {
+            if (e.touches[0].clientY - touchStartY > 80) closeAttrPanel();
+        });
+    })();
+    </script>
+</body>
+</html>
