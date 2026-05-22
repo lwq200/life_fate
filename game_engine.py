@@ -609,7 +609,7 @@ class GameEngine:
         if not self.state:
             return
 
-        if self.state.attributes.constitution < 0:
+        if self.state.attributes.constitution <= 0:
             self.state.game_over = True
             if self.state.age < 10:
                 self.state.flags["ending"] = "夭折"

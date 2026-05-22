@@ -124,7 +124,7 @@ class ActionEvaluationResponse(BaseModel):
     narrative: str
     scene_title: str
     scene_description: str
-    choices: List[ChoiceOption] = Field(min_length=2, max_length=4)
+    choices: List[ChoiceOption] = Field(min_length=0, max_length=4)
     attribute_changes: Dict[str, int]
     score: ScoreDetail
     next_age: int = Field(ge=0)

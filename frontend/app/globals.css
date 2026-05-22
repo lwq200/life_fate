@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
 * {
   box-sizing: border-box;
 }
@@ -11,21 +13,33 @@ body {
   padding: 0;
   margin: 0;
   height: 100%;
+  background: #0d0b08;
+  color: #e8dcc8;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: rgba(26, 21, 16, 0.3);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: rgba(139, 115, 85, 0.4);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: rgba(201, 169, 110, 0.5);
+}
+
+::selection {
+  background: rgba(201, 169, 110, 0.3);
+  color: #e8dcc8;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(168, 155, 140, 0.5);
 }
